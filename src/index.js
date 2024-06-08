@@ -1,4 +1,7 @@
-const { Client, Events, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const { Client, Events, GatewayIntentBits } = require('discord.js');
+const { ChatCommands } = require('./enum/appConst');
+const { startPlayYescoin, stopPlayYesCoin, inputToken } = require('./service/yescoin');
+const { helpReply } = require('./service/replyTemplate');
 require('dotenv').config();
 
 const client = new Client({
@@ -13,21 +16,30 @@ client.once(Events.ClientReady, readyClient => {
 });
 
 client.on(Events.MessageCreate, async interaction => {
-	if(interaction.author.bot) return;
-	test(interaction);
+	if (interaction.author.bot) return;
+	let content = interaction.content.trim().split(" ");
+	let frefix = content[0];
+	switch (frefix) {
+		case ChatCommands.START_PLAY:
+			if (!coinCount || !time) {
+				const embed = helpReply();
+				await interaction.reply({ embeds: [embed] });
+			}
+			const coinCount = Number(content[1]);
+			const time = Number(content[2]);
+			startPlayYescoin(coinCount, time, interaction);
+			break;
+		case ChatCommands.STOP_PLAY:
+			stopPlayYesCoin(interaction);
+			break;
+		case ChatCommands.INPUT_TOKEN:
+			const token = content[1];
+			inputToken(token, interaction)
+			break;
+		default:
+			const embed = helpReply();
+			await interaction.reply({ embeds: [embed] });
+	}
 });
-
-const test = async (interaction) => {
-	const embed = new EmbedBuilder()
-					.setTitle('Yescoin log info')
-					.setColor(0x18e1ee)
-					.addFields(
-						{ name: '', value: 'Some value here', inline: true },
-						{ name: 'Inline field title', value: 'Some value here', inline: true },
-						{ name: 'Inline field title', value: 'Some value here', inline: true },
-						{ name: '\u200B', value: '\u200B' },
-					).setTimestamp(Date.now())
-		await interaction.reply({ embeds: [embed] });
-}
 
 client.login(process.env.TOKEN);
